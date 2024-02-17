@@ -1,7 +1,9 @@
 import { PixaBayApi } from './pixabay-api';
+import axios from "axios";
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 import { LoadMoreBtn } from './components/LoadMoreButton';
 import SimpleLightbox from "simplelightbox";
+import { BASE_URL, options } from './pixabay-api';
 
 import "simplelightbox/dist/simple-lightbox.min.css";
 
@@ -9,34 +11,75 @@ const galleryEl = document.querySelector('.gallery');
 const formEl = document.querySelector('form');
 const loaderEl = document.querySelector('.loader');
 
-const api = new PixaBayApi();
+// const api = new PixaBayApi();
 const loadMoreButton = new LoadMoreBtn({
     selector: '.load-more',
     isHidden: true,
 });
 
+
+
+
 const lightbox = new SimpleLightbox('.gallery a', { captionsData: 'alt', captionDelay: 250 });
 
-loadMoreButton.button.addEventListener('click', () => {
-    // Show loader before making API call
+
+loadMoreButton.button.addEventListener('click', async () => {
     loaderEl.classList.remove('is-hidden');
+    loadMoreButton.hide();
+    options.params.page++; // Increment page number
+ 
+    try {
 
-    api.get(globalSearchQuery)
-        .then(data => {
-            loaderEl.classList.add('is-hidden');
-            loadMoreButton.show();
-
-            if (data.hits.length <= 0) {
-                return Notify.failure(`We're sorry, but you've reached the end of search results`);
-            }
-
-            displayImages(data.hits);
-        })
-        .catch(error => {
-            loaderEl.classList.add('is-hidden');
-            Notify.failure(`Request page is out of range!`);
-        });
+        const response = await axios.get(BASE_URL, options);
+        const hits = response.data.hits;
+       
+        loaderEl.classList.add('is-hidden');
+        loadMoreButton.show();
+        if (hits.length === 0) {
+            Notify.info("We're sorry, but you've reached the end of the search results.");
+            loadMoreButton.hide();
+            
+        }else{
+            displayImages(hits);
+        }
+        
+       
+    } catch (error) {
+        Notify.failure(error.message);
+        loaderEl.classList.add('is-hidden');
+    }
 });
+
+
+// async function loadMore(){
+//     options.params.page += 1;
+//     try{
+//         const response = await axios.get(BASE_URL, options);
+//         const hits = response.data.hits;
+//         displayImages(hits);
+//         loaderEl.classList.add('is-hidden');
+//         loadMoreButton.show();
+//         if (hits.length === 0) {
+//             Notify.info("We're sorry, but you've reached the end of the search results.");
+//         }
+
+//     }catch(err){
+//         Notify.failure(err);
+//     }
+// }
+
+// function handleScroll(){
+//     const {scrollTop, scrollHeight, clientHeight } = document.documentElement;
+
+//     if(scrollTop + clientHeight >= scrollHeight){
+//         loadMore();
+//     }
+// }
+
+// window.addEventListener('scroll', handleScroll);
+
+let totalHits = 0;
+let reachedEnd = false;
 
 function displayImages(hits) {
     galleryEl.innerHTML = '';
@@ -69,56 +112,61 @@ function displayImages(hits) {
 
     galleryEl.classList.remove('is-hidden');
     lightbox.refresh();
+    
+
+    const { height: cardHeight } = galleryEl.firstElementChild.getBoundingClientRect();
 
 
-     const { height: cardHeight } = galleryEl.firstElementChild.getBoundingClientRect();
+    //  const totalAddedHeight = hits.length * cardHeight;
+     
+    window.scrollBy({
+        top: cardHeight,
+        behavior: 'smooth',
+    })
 
-
-     const totalAddedHeight = hits.length * cardHeight;
- 
-
-     window.scrollBy({
-         top: totalAddedHeight,
-         behavior: "smooth",
-     });
+     
 }
+
+
+
+
+
 
 let globalSearchQuery = '';
 
-function handleSubmit(event) {
+async function handleSubmit(event) {
     event.preventDefault();
 
     const searchQuery = event.target.elements.searchQuery.value.trim();
-    globalSearchQuery = searchQuery;
+    if (searchQuery === '') {
+        return;
+    }
 
-    if (searchQuery) {
-        loaderEl.classList.remove('is-hidden');
+    options.params.q = searchQuery;
+    options.params.page = 1;
+    galleryEl.innerHTML = '';
+    reachedEnd = false;
 
-        api.get(searchQuery)
-        .then(data => {
-                loaderEl.classList.add('is-hidden');
-                loadMoreButton.show();
+    try {
+        const response = await axios.get(BASE_URL, options);
+        totalHits = response.data.totalHits;
 
-                const totalHits = data.totalHits;
+        const { hits } = response.data;
+        if (hits.length === 0) {
+            Notify.failure("Sorry, there are no images matching your search query. Please try again");
+            loadMoreButton.hide();
+        } else {
+            Notify.success(`Hooray! We found ${totalHits} images`);
+            loadMoreButton.show();
+            displayImages(hits);
+        }
 
-                if (data.hits.length > 0) {
-                    Notify.success(`Hooray! We found ${totalHits} totalHits images.`);
-                    
-                }
-                else if(data.hits.length <= 0) {
-                    loadMoreButton.hide();
-                    return Notify.failure(`Sorry, there are no images matching your search query. Please try again`);
-                }
-
-                displayImages(data.hits);
-            })
-            .catch(error => {
-                loaderEl.classList.add('is-hidden');
-                Notify.failure(`Request page is out of range!`);
-            });
+        searchQuery.value = '';
+    } catch (error) {
+        Notify.failure(error.message); // Display error message
     }
 }
 
-formEl.addEventListener('submit', handleSubmit);
 
+formEl.addEventListener('submit', handleSubmit);
 
