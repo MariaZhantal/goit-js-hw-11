@@ -31,6 +31,8 @@ loadMoreButton.button.addEventListener('click', async () => {
 
         const response = await axios.get(BASE_URL, options);
         const hits = response.data.hits;
+        const perPage = options.params.per_page;
+        const maxPages = Math.ceil(totalHits / perPage);
        
         loaderEl.classList.add('is-hidden');
         loadMoreButton.show();
@@ -38,14 +40,22 @@ loadMoreButton.button.addEventListener('click', async () => {
             Notify.info("We're sorry, but you've reached the end of the search results.");
             loadMoreButton.hide();
             
+        }else if(options.params.page > maxPages) {
+            Notify.info("You've reached the end of the search results.");
+            loadMoreButton.hide();
         }else{
             displayImages(hits);
         }
         
        
     } catch (error) {
-        Notify.failure(error.message);
-        loaderEl.classList.add('is-hidden');
+        if (error.response.data === "[ERROR 400] \"page\" is out of valid range.") {
+            Notify.info("You've reached the end of the search results.");
+            loadMoreButton.hide();
+        } else {
+            Notify.failure(error.message);
+        }
+        loaderEl.classList.add('is-hidden')
     }
 });
 
@@ -120,12 +130,13 @@ async function handleSubmit(event) {
     try {
         const response = await axios.get(BASE_URL, options);
         totalHits = response.data.totalHits;
+       
 
         const { hits } = response.data;
         if (hits.length === 0) {
             Notify.failure("Sorry, there are no images matching your search query. Please try again");
             loadMoreButton.hide();
-        } else {
+        }else{
             Notify.success(`Hooray! We found ${totalHits} images`);
             loadMoreButton.show();
             displayImages(hits);
