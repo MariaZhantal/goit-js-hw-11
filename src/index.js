@@ -9,6 +9,7 @@ import "simplelightbox/dist/simple-lightbox.min.css";
 const galleryEl = document.querySelector('.gallery');
 const formEl = document.querySelector('form');
 const loaderEl = document.querySelector('.loader');
+const searchQuery = document.querySelector('input[name="searchQuery"]')
 
 const loadMoreButton = new LoadMoreBtn({
     selector: '.load-more',
@@ -106,12 +107,12 @@ let globalSearchQuery = '';
 async function handleSubmit(event) {
     event.preventDefault();
 
-    const searchQuery = event.target.elements.searchQuery.value.trim();
-    if (searchQuery === '') {
+    const searchQueryValue = event.target.elements.searchQuery.value.trim();
+    if (searchQueryValue === '') {
         return;
     }
 
-    options.params.q = searchQuery;
+    options.params.q = searchQueryValue;
     options.params.page = 1;
     galleryEl.innerHTML = '';
     reachedEnd = false;
@@ -130,7 +131,7 @@ async function handleSubmit(event) {
             displayImages(hits);
         }
 
-        searchQuery.value = '';
+        searchQueryValue.value = '';
     } catch (error) {
         Notify.failure(error.message); 
     }
