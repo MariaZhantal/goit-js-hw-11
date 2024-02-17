@@ -131,7 +131,7 @@ async function handleSubmit(event) {
             displayImages(hits);
         }
 
-        searchQueryValue.value = '';
+        searchQuery.value = '';
     } catch (error) {
         Notify.failure(error.message); 
     }
