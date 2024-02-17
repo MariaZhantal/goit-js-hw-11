@@ -1,4 +1,3 @@
-import { PixaBayApi } from './pixabay-api';
 import axios from "axios";
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 import { LoadMoreBtn } from './components/LoadMoreButton';
@@ -11,7 +10,6 @@ const galleryEl = document.querySelector('.gallery');
 const formEl = document.querySelector('form');
 const loaderEl = document.querySelector('.loader');
 
-// const api = new PixaBayApi();
 const loadMoreButton = new LoadMoreBtn({
     selector: '.load-more',
     isHidden: true,
@@ -26,7 +24,7 @@ const lightbox = new SimpleLightbox('.gallery a', { captionsData: 'alt', caption
 loadMoreButton.button.addEventListener('click', async () => {
     loaderEl.classList.remove('is-hidden');
     loadMoreButton.hide();
-    options.params.page++; // Increment page number
+    options.params.page++; 
  
     try {
 
@@ -50,33 +48,6 @@ loadMoreButton.button.addEventListener('click', async () => {
     }
 });
 
-
-// async function loadMore(){
-//     options.params.page += 1;
-//     try{
-//         const response = await axios.get(BASE_URL, options);
-//         const hits = response.data.hits;
-//         displayImages(hits);
-//         loaderEl.classList.add('is-hidden');
-//         loadMoreButton.show();
-//         if (hits.length === 0) {
-//             Notify.info("We're sorry, but you've reached the end of the search results.");
-//         }
-
-//     }catch(err){
-//         Notify.failure(err);
-//     }
-// }
-
-// function handleScroll(){
-//     const {scrollTop, scrollHeight, clientHeight } = document.documentElement;
-
-//     if(scrollTop + clientHeight >= scrollHeight){
-//         loadMore();
-//     }
-// }
-
-// window.addEventListener('scroll', handleScroll);
 
 let totalHits = 0;
 let reachedEnd = false;
@@ -116,8 +87,6 @@ function displayImages(hits) {
 
     const { height: cardHeight } = galleryEl.firstElementChild.getBoundingClientRect();
 
-
-    //  const totalAddedHeight = hits.length * cardHeight;
      
     window.scrollBy({
         top: cardHeight,
@@ -163,7 +132,7 @@ async function handleSubmit(event) {
 
         searchQuery.value = '';
     } catch (error) {
-        Notify.failure(error.message); // Display error message
+        Notify.failure(error.message); 
     }
 }
 
